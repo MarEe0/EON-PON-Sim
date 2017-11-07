@@ -302,8 +302,8 @@ class Packet(object):
         self.freq = freq
 
     def __repr__(self):
-        return "Packet [id:{},src:{},init_time:{}]".\
-            format(self.id, self.src, self.init_time)
+        return "Packet [id:{},src:{},size:{},init_time:{}]".\
+            format(self.id, self.src, self.size, self.init_time)
 
 # abstract class
 class Virtual_Machine(object):
@@ -766,6 +766,7 @@ class ONU(Active_Node):
                 data_to_transfer.append(p)
                 total += p.size
             self.total_hold_size -= total
+            dprint(str(self), "removed", str(total), "from its hold_size; new hold_size:", self.total_hold_size)
         dprint(str(self), "plans to send", str(data_to_transfer), "with a hold of", str(self.hold_up), "and grant of", str(grant) ,"at", self.env.now)
         if(len(data_to_transfer) < 1):
             # data is empty! return grant and data
@@ -894,7 +895,7 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
             yield req
             if(type(r) is Request and r.id_sender in self.onus):
                 # process request
-                dprint("Receiving", str(r), "at", str(self.env.now))
+                dprint(str(self), "Receiving", str(r), "at", str(self.env.now))
                 if(r.ack != self.acks[r.id_sender]): # not aligned acks!
                     dprint(str(self), "received duplicated request at", str(self.env.now))
                     self.duplicated_requests += 1
