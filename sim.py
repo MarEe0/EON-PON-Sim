@@ -2,6 +2,7 @@ import simpy
 import functools
 import random
 import time
+from math import ceil
 from enum import Enum
 
 DEBUG = False
@@ -21,7 +22,9 @@ tg_default_size = lambda x: 50
 # default traffic generator distribution:
 tg_default_dist = lambda x: random.expovariate(10)
 # default DBA bandwidth:
-DBA_IPACT_default_bandwidth = 1250000 # 1.25 Gb/s, bandwidth for each frequency/vpon
+#DBA_IPACT_default_bandwidth = 1250000 # 1.25 Gb/s, bandwidth for each frequency/vpon
+# default slot bandwidth:
+slot_default_bandwidth = 6250000 # 6.25Gbps
 # default Antenna consumption:
 Ant_consumption = lambda x: 0
 # default ONU consumption:
@@ -924,10 +927,10 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
 
                     send_size = 0
                     if(available_band >= r.bandwidth):
-                        print(str(self), "has enough bandwidth for request at", self.env.now)
+                        dprint(str(self), "has enough bandwidth for request at", self.env.now)
                         send_size = r.bandwidth
                     else:
-                        print(str(self), "hasn't enough bandwidth for request, generating max band at", self.env.now)
+                        dprint(str(self), "hasn't enough bandwidth for request, generating max band at", self.env.now)
                         send_size = available_band
 
                     g = Grant(r.id_sender, send_time, send_size, self.freq, self.acks[r.id_sender])
@@ -967,7 +970,9 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
                 if(len(self.onus) < 0):
                     dprint(str(self), "is going to hibernate at", self.env.now)
                     self.counting = False
-                    self.node.LC[self.freq+1].end() # suspend LC linked to this VPON
+                    # Elastic code: multi-LCs
+                    for slot in self.freq:
+                        self.node.LC[slot+1].end() # suspend LC linked to this VPON
                     self.end() # suspend this VPON
             yield self.env.timeout(foo_delay)
 
@@ -983,10 +988,27 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
         self.max_frequency = max_frequency
         self.delay = delay
 
-        self.available_freq = 0
+        # Elastic code: available frequencies are a list of slots
+        # This is a list of 0s and 1s, where 1 = occupied
+        self.available_freq = [0 for _ in range(self.max_frequency)]
         self.dbas = []
 
         Active_Node.__init__(self, env, enabled, consumption_rate, [], self.env.now)
+
+    # Elastic function that assigns slots to attend to a bandwidth
+    # Note: RSA algorithms go here
+    def assign_slots(self, bandwidth):
+        # Compute how many slots will be needed to fulfill the request
+        slots_needed = ceil(bandwidth/slot_default_bandwidth)
+        dprint(str(self),"is attempting to assign",slots_needed,"slots for size",bandwidth)
+
+        # Basic RSA: find first sequence of slots available, bottoms-up
+        for slot, status in enumerate(self.available_freq):
+            if sum(self.available_freq[slot:slot + slots_needed]) == 0:
+                # Found it
+                return list(range(slot, slot + slots_needed))
+        # None found
+        return None
 
     def func(self, o):
         if(type(o) is Request):
@@ -1003,21 +1025,27 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
             # not fonud! create/assign new VPON/DBA
             dprint(str(self) + ": this ONU hasn't a DBA")
             if(target_dba == None):
-                if(len(self.node.LC) > self.available_freq+1):
+                # Elastic: assigning a set of slots
+                assigned_slots = self.assign_slots(o.bandwidth)
+                if(assigned_slots is not None):
                     # create, if possible
                     dprint(str(self) + ": Creating DBA at", self.env.now)
-                    target_dba = DBA_IPACT(self.env, self.node, 0, self.available_freq, DBA_IPACT_default_bandwidth) # DBA_IPACT_default_bandwidth
-                    lc = self.node.LC[self.available_freq+1]
-                    if(lc.enabled is False):
-                        lc.start()
-                    if(lc.out == None):
-                        lc.out = self.node.DU[1] # guessed baseband DU
-                    self.available_freq += 1
+                    target_dba = DBA_IPACT(self.env, self.node, 0, assigned_slots, len(assigned_slots)*slot_default_bandwidth) # DBA_IPACT_default_bandwidth
+                    
+                    # Elastic: occupying LCs and available freqs
+                    for assigned_slot in assigned_slots:
+                        self.available_freq[assigned_slot] = 1
+                        lc = self.node.LC[assigned_slot+1]
+                        if(lc.enabled is False):
+                            lc.start()
+                        if(lc.out == None):
+                            lc.out = self.node.DU[1] # guessed baseband DU
+
                     target_dba.associate_onu(o)
                     yield self.env.process(self.node.DU[0].append_vm(target_dba))
                     self.dbas.append(target_dba)
                 else:
-                    dprint(str(self.node), "has no bandwidth at", self.env.now)
+                    dprint(str(self.node), "could not assign slots at", self.env.now)
                     pass
             else:
                 dprint(str(self) + ": Assigning DBA")
