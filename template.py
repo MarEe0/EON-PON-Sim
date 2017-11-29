@@ -6,6 +6,8 @@ sim.random.seed(13)
 # environment
 env = sim.simpy.Environment()
 
+sim.DEBUG = True
+
 # writer
 # packet_w = Writer("packet_", start="# id src init_time waited_time freq processed_time\n")
 

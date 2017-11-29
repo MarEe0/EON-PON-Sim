@@ -56,6 +56,10 @@ Antenna_Speed = 300000000
 foo_delay = 0.00005 # arbitrary
 
 # Statistics
+total_lost = 0
+total_duplicated = 0
+total_requests = 0
+bandwidth_used = 0
 
 output_files = []
 
@@ -306,8 +310,8 @@ class Packet(object):
         self.freq = freq
 
     def __repr__(self):
-        return "Packet [id:{},src:{},size:{},init_time:{}]".\
-            format(self.id, self.src, self.size, self.init_time)
+        return "Packet [id:{},src:{},size:{},freq:{},init_time:{}]".\
+            format(self.id, self.src, self.size, self.freq, self.init_time)
 
 # abstract class
 class Virtual_Machine(object):
@@ -323,10 +327,10 @@ class Foo_BB_VM(Virtual_Machine):
     def func(self, o):
         if(packet_w != None):
             if(type(o) is Packet):
-                packet_w.write("{} {} {} {} {} {}\n".format(o.id, o.src, o.init_time, o.waited_time, o.freq, self.env.now))
+                packet_w.write("{} {} {} {} {} {} {}\n".format(o.id, o.src, o.init_time, o.waited_time, o.freq, o.size, self.env.now))
             if(type(o) is list and type(o[0]) is Packet):
                 for p in o:
-                    packet_w.write("{} {} {} {} {} {}\n".format(p.id, p.src, p.init_time, p.waited_time, p.freq, self.env.now))
+                    packet_w.write("{} {} {} {} {} {} {}\n".format(p.id, p.src, p.init_time, p.waited_time, p.freq, p.size, self.env.now))
             yield self.env.timeout(self.delay)
         return None
 
@@ -522,6 +526,10 @@ class Processing_Node(Active_Node):
                                 if(true_object.freq == l.freq):
                                     target_lc = l
                                     break
+                                elif type(true_object.freq) is list:
+                                    if(true_object.freq[0] == l.freq):
+                                        target_lc = l
+                                        break                                    
                             if(target_lc != None):
                                 self.env.process(target_lc.put(o))
                 # if any data received from up
@@ -731,7 +739,7 @@ class ONU(Active_Node):
             counted = 0
             for t in self.target_down:
                 additional_time = 0
-                if(bitRate_down > 0):
+                if(self.bitRate_down > 0):
                     total_size = 0
                     if(type(o) is list):
                         for k in o:
@@ -865,6 +873,10 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
         # Elastic code: destroy DBA after use
         self.kill_me = False
 
+        ### timeout:
+        self.timeout = False
+
+
     def update_bandwidth(self):
         # update bandwidth used
         while(len(self.bandwidth_used) > 0 and self.env.now - self.bandwidth_used[0][2] > 1):
@@ -899,15 +911,28 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
         self.onus.remove(onu)
         del self.acks[onu]
 
+    ### timer:
+    def timer(self, time):
+        yield self.env.timeout(time)
+        # se nao houve requests depois deste ultimo
+        if(self.free_time < self.env.now):
+            self.kill_me = True
+            self.end()
+
     def func(self, r):
+        global total_duplicated
+        global total_lost
+        global total_requests
         with self.busy.request() as req: # semaphore
             yield req
             if(type(r) is Request and r.id_sender in self.onus):
                 # process request
                 dprint(str(self), "Receiving", str(r), "at", str(self.env.now))
+                total_requests += 1
                 if(r.ack != self.acks[r.id_sender]): # not aligned acks!
                     dprint(str(self), "received duplicated request at", str(self.env.now))
                     self.duplicated_requests += 1
+                    total_duplicated += 1
                     return None
                 # aligned acks
                 time_to = self.node.time_to_onu(0, r.id_sender)
@@ -933,8 +958,10 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
                         dprint(str(self), "has enough bandwidth for request at", self.env.now)
                         send_size = r.bandwidth
                     else:
-                        dprint(str(self), "hasn't enough bandwidth for request, generating max band at", self.env.now)
-                        send_size = available_band
+                        dprint(str(self), "is discarding request: not enough bandwidth available at", self.env.now)
+                        self.discarded_requests += 1
+                        total_lost += 1
+                        return
 
                     g = Grant(r.id_sender, send_time, send_size, self.freq, self.acks[r.id_sender])
                     dprint(str(self), "generated", str(g), "at", self.env.now)
@@ -943,12 +970,13 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
                     yield self.env.process(self.node.send_down(g))
                     self.bandwidth_used.append((g.onu, g.size, g.init_time, g.init_time + time_from))
                     dprint("Bandwidth available:", self.bandwidth_available(), "at", self.env.now)
+                    ### set the timer:
                     yield self.env.timeout(self.delay)
                     self.counting = True
 
                     # Elastic: kill DBA after use
-                    dprint(str(self),"flagged suicide at",self.env.now)
-                    self.kill_me = True
+                    dprint(str(self),"flagged for destruction in",time_to + time_from + foo_delay,"at",self.env.now)
+                    self.env.process(self.timer(time_to + time_from + 2*foo_delay))
                     return None # return none
 
                 else:
@@ -959,12 +987,14 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
                         # activate more-local PN
                         dprint(str(self), "is activating a more local node randomly at", self.env.now)
                         self.discarded_requests += 1
+                        total_lost += 1
                         node = self.node.local_nodes.pop()
                         node.start()
                     else:
                         # no more local nodes!
                         dprint(str(self), "is discarding request: no bandwidth available at", self.env.now)
                         self.discarded_requests += 1
+                        total_lost += 1
             else:
                 # pass along to another dba
                 dprint(str(self),"is passing along object", str(r), "at", str(self.env.now))
@@ -1000,6 +1030,8 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
         self.available_freq = [0 for _ in range(self.max_frequency)]
         self.dbas = []
 
+        self.action = self.env.process(self.run())
+
         Active_Node.__init__(self, env, enabled, consumption_rate, [], self.env.now)
 
     # Elastic function that assigns slots to attend to a bandwidth
@@ -1027,13 +1059,16 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
                 if(o.id_sender in d.onus): # found!
                     dprint(str(self) + ": this ONU has already a DBA")
                     return o
-                if(target_dba == None and d.bandwidth_available() - o.bandwidth >= 0):
-                    target_dba = d
+                #if(target_dba == None and d.bandwidth_available() - o.bandwidth >= 0):
+                #    target_dba = d
             # not fonud! create/assign new VPON/DBA
             dprint(str(self) + ": this ONU hasn't a DBA")
             if(target_dba == None):
                 # Elastic: assigning a set of slots
                 assigned_slots = self.assign_slots(o.bandwidth)
+
+                #print("Creating DBA at {:.4f} for Request {}, using slots {}".format(self.env.now, str(o), assigned_slots))
+                
                 if(assigned_slots is not None):
                     # create, if possible
                     dprint(str(self) + ": Creating DBA at", self.env.now)
@@ -1065,17 +1100,17 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
     def run(self):
         while True:
             #Elastic
-            print("earth?")
             if self.enabled:
                 # Check if any associated DBA should be killed
                 auxiliary_dba_list = []
                 for dba in self.dbas:
                     if dba.kill_me:
-                        dprint(str(self),"killing",str(dba),"at", self.env.now)
+                        dprint(str(self),"destroying",str(dba),"at", self.env.now)
                         # Freeing the frequencies used
                         for freq in dba.freq:
                             self.available_freq[freq] = 0
                             self.node.LC[freq+1].end()
+                        dba.end()
                     else:
                         auxiliary_dba_list.append(dba)
                 self.dbas = auxiliary_dba_list

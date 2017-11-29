@@ -320,10 +320,10 @@ class Foo_BB_VM(Virtual_Machine):
     def func(self, o):
         if(packet_w != None):
             if(type(o) is Packet):
-                packet_w.write("{} {} {} {} {} {}\n".format(o.id, o.src, o.init_time, o.waited_time, o.freq, self.env.now))
+                packet_w.write("{} {} {} {} {} {} {}\n".format(o.id, o.src, o.init_time, o.waited_time, o.freq, o.size, self.env.now))
             if(type(o) is list and type(o[0]) is Packet):
                 for p in o:
-                    packet_w.write("{} {} {} {} {} {}\n".format(p.id, p.src, p.init_time, p.waited_time, p.freq, self.env.now))
+                    packet_w.write("{} {} {} {} {} {} {}\n".format(p.id, p.src, p.init_time, p.waited_time, p.freq, p.size, self.env.now))
             yield self.env.timeout(self.delay)
         return None
 
@@ -755,6 +755,7 @@ class ONU(Active_Node):
             # negative time to wait
             dprint(str(self), "is going to discard grant, reason: negative wait time; at", self.env.now)
             self.env.process(self.gen_request())
+            return
 
         data_to_transfer = []
         with self.res_hold_up.request() as req:
@@ -848,6 +849,7 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
         self.counting = False
         self.discarded_requests = 0
         self.duplicated_requests = 0
+        self.received_requests = 0
 
         self.busy = simpy.Resource(self.env, capacity=1)
         self.onus = [] # "connected" onus
@@ -898,6 +900,7 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
             if(type(r) is Request and r.id_sender in self.onus):
                 # process request
                 dprint("Receiving", str(r), "at", str(self.env.now))
+                self.received_requests += 1
                 if(r.ack != self.acks[r.id_sender]): # not aligned acks!
                     dprint(str(self), "received duplicated request at", str(self.env.now))
                     self.duplicated_requests += 1
@@ -923,10 +926,10 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
 
                     send_size = 0
                     if(available_band >= r.bandwidth):
-                        print(str(self), "has enough bandwidth for request at", self.env.now)
+                        dprint(str(self), "has enough bandwidth for request at", self.env.now)
                         send_size = r.bandwidth
                     else:
-                        print(str(self), "hasn't enough bandwidth for request, generating max band at", self.env.now)
+                        dprint(str(self), "hasn't enough bandwidth for request, generating max band at", self.env.now)
                         send_size = available_band
 
                     g = Grant(r.id_sender, send_time, send_size, self.freq, self.acks[r.id_sender])
