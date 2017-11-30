@@ -1,4 +1,4 @@
-import elastic as sim, random
+import elastic as sim, random, numpy as np
 
 sim.DEBUG = True
 
@@ -54,6 +54,41 @@ total_req = sim.total_requests
 lost_req = sim.total_lost
 duplicated_req = sim.total_duplicated
 print("Requests lost: {} ({:.2f}%). Requests duplicated: {} ({:.2f}%)".format(lost_req, (lost_req*100/total_req), duplicated_req, (duplicated_req*100/total_req)))
+
+file = open(sim.output_files[0], "r")
+total = 0
+lines = 0
+packets = []
+for line in file:
+    line_sep = line.split(' ')
+    if(line_sep[0][0] == "#"):
+        continue
+    total += float(line_sep[3])
+    packets.append({"start": float(line_sep[2]), "size": float(line_sep[5]), "end": float(line_sep[6])})
+    lines += 1
+file.close()
+
+total = total / lines
+
+def compute_mean_erlang(packets, total_time, total_channels, channel_size, delta=0.1):
+    #print("got packets:")
+    #for packet in packets:
+    #    print("\t",packet)
+
+    # Computes mean erlang from a list of packets
+    erlangs = np.zeros(int(total_time/delta))
+    for i in range(len(erlangs)):
+        current_time = i*delta
+        for packet in packets:
+            if current_time >= packet["start"] and current_time <= packet["end"]:
+                erlangs[i] += ((packet["size"]) / (channel_size))
+    #for i in range(len(erlangs)):
+    #    print("erlang at {}: {}".format(i*delta, erlangs[i]))
+    return erlangs.mean(), erlangs.std()
+
+mean_erlang, std_erlang = compute_mean_erlang(packets, total_time=3, total_channels=max_freqs, channel_size=sim.slot_default_bandwidth)
+
+print("Mean wait: {:.4f}. Mean erlang: {:.2f} +/- {:.2f}".format(total, mean_erlang, std_erlang))
 
 # consumption
 for n in nodes:
