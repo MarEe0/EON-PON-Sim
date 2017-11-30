@@ -1,9 +1,8 @@
 import simpy
-import functools
+import os
 import random
 import time
 from math import ceil
-from enum import Enum
 
 DEBUG = False
 simlog = open("simlog.log", "w")
@@ -67,7 +66,7 @@ output_files = []
 # writer class
 class Writer(object):
     def __init__(self, start="#\n"):
-        filename = time.strftime("%d%m%Y_%H%M%S_output.dat")
+        filename = os.path.join("output","{}_{:04}_output.dat".format(time.strftime("%d%m%Y_%H%M%S"), random.randint(0,9999)))
         output_files.append(filename)
         self.file = open(filename, 'w')
         dprint("Opening file", filename, "to write.")
