@@ -326,10 +326,10 @@ class Foo_BB_VM(Virtual_Machine):
     def func(self, o):
         if(packet_w != None):
             if(type(o) is Packet):
-                packet_w.write("{} {} {} {} {} {} {}\n".format(o.id, o.src, o.init_time, o.waited_time, o.freq, o.size, self.env.now))
+                packet_w.write("{} {} {} {} {} {} {}\n".format(o.id, o.src, o.init_time, o.waited_time, repr(o.freq).replace(" ", ""), o.size, self.env.now))
             if(type(o) is list and type(o[0]) is Packet):
                 for p in o:
-                    packet_w.write("{} {} {} {} {} {} {}\n".format(p.id, p.src, p.init_time, p.waited_time, p.freq, p.size, self.env.now))
+                    packet_w.write("{} {} {} {} {} {} {}\n".format(p.id, p.src, p.init_time, p.waited_time, repr(p.freq).replace(" ", ""), p.size, self.env.now))
             yield self.env.timeout(self.delay)
         return None
 
