@@ -1,0 +1,2 @@
+n_ONUS	Lost_req	Lost_pct	Avg_wait	erlang	erlang_std	power
+20	0.0	0.0	0.0	0.0	0.0	2324.999999997682

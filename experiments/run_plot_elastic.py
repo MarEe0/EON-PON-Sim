@@ -1,3 +1,7 @@
+
+import sys, os
+sys.path.append("./../")
+
 import elastic as sim
 import random
 import matplotlib.pyplot as plt
@@ -11,7 +15,7 @@ sim.random.seed(13)
 sim.tg_default_size = lambda x: 250
 sim.tg_default_dist = lambda x: random.uniform(0.9, 1.1)
 sim.slot_default_bandwidth = 100
-ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 8
+ONU_bitRate_up = sim.slot_default_bandwidth * 8
 sim.ONU_consumption = lambda x: 15
 sim.PN_consumption = lambda x: 25
 sim.Ant_consumption = lambda x: 7
