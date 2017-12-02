@@ -84,13 +84,13 @@ for s in seeds:
         matrix = []
         for z in range(f):
             #print("connecting antenna {} to onu {}".format(z, f+z))
-            matrix.append([z, f+z, 100000])
+            matrix.append([z, f+z, random.randint(5000,10000)])
             #print("connecting onu {} to pn {}".format(f+z, 2*f+z))
             matrix.append([f+z, 2*f+z, 10])
             #print("connecting pn {} to splitter {}".format(2*f+z, 3*f+1))
-            matrix.append([2*f+z, 3*f+1, 100000])
+            matrix.append([2*f+z, 3*f+1, random.randint(5000,10000)])
         #print("connecting splitter {} to cloud {}".format(3*f+1, 3*f))
-        matrix.append([3*f+1, 3*f, 100000])
+        matrix.append([3*f+1, 3*f, random.randint(5000,10000)])
 
         nodes = sim.create_topology(env, antenas, onus, pns, splts, matrix, max_frequencies)
 
@@ -145,6 +145,8 @@ for s in seeds:
             lines += 1
         file.close()
 
+        if lines == 0:
+            lines = 1
         total = total / lines
         mean_waited_array.append(total)
 

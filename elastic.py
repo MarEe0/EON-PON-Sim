@@ -511,7 +511,7 @@ class Processing_Node(Active_Node):
         while(True):
             if(self.enabled):
                 # if any data received from down
-                if(len(self.hold_up) > 0):
+                while(len(self.hold_up) > 0):
                     with self.res_hold_up.request() as req:
                         yield req
                         o = self.hold_up.pop(0)
@@ -532,7 +532,7 @@ class Processing_Node(Active_Node):
                             if(target_lc != None):
                                 self.env.process(target_lc.put(o))
                 # if any data received from up
-                if(len(self.hold_down) > 0):
+                while(len(self.hold_down) > 0):
                     with self.res_hold_down.request() as req:
                         yield req
                         dprint(str(self), "is going to send (downstream) at", self.env.now)
@@ -966,7 +966,8 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
                     dprint(str(self), "generated", str(g), "at", self.env.now)
                     self.free_time = send_time + time_from
 
-                    yield self.env.process(self.node.send_down(g))
+                    #yield self.env.process(self.node.send_down(g))
+                    self.env.process(self.node.send_down(g))
                     self.bandwidth_used.append((g.onu, g.size, g.init_time, g.init_time + time_from))
                     dprint("Bandwidth available:", self.bandwidth_available(), "at", self.env.now)
                     ### set the timer:
@@ -1049,6 +1050,8 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
         return None
 
     def func(self, o):
+        global total_lost
+        global total_requests
         if(type(o) is Request):
             dprint(str(self), "received", str(o), "at", self.env.now)
             # search request's dba (if possible)
@@ -1086,6 +1089,8 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
                     yield self.env.process(self.node.DU[0].append_vm(target_dba))
                     self.dbas.append(target_dba)
                 else:
+                    total_requests += 1
+                    total_lost += 1
                     dprint(str(self.node), "could not assign slots at", self.env.now)
                     pass
             else:
