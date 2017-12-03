@@ -1,14 +1,14 @@
-# Experiment 1 parameters:
-# CF-RAN, 100000 units of distance between nodes
-# Local nodes at ONU
-# 5 seconds
+# Experiment 3 parameters:
+# C-RAN, [5km-10km] distance between nodes
+# 15 seconds
 # 4, 8, 12, 16, 20 RRHs
-# Traffic generation: constant 250/s
-# Channels: 10 of size 5000
+# Traffic generation: [614Mb-24.3Gb]/ [1.0-5.0] s
+# Channels: 16 of size 6250
+
 import sys, os
 sys.path.append("./../")
 
-import sim
+import elastic as sim
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -35,10 +35,10 @@ def compute_mean_erlang(packets, total_time, total_channels, channel_size, delta
 sim.random.seed(13)
 
 # default values
-sim.tg_default_size = lambda x: 250
-sim.tg_default_dist = lambda x: 1
-sim.DBA_IPACT_default_bandwidth = 5000
-ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 8
+sim.tg_default_size = lambda x: random.randint(614,24300)
+sim.tg_default_dist = lambda x: random.randrange(1.0, 5.0)
+sim.DBA_IPACT_default_bandwidth = 6250 #10Gbps
+ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
 sim.ONU_consumption = lambda x: 15
 sim.PN_consumption = lambda x: 25
 sim.Ant_consumption = lambda x: 7
@@ -55,9 +55,9 @@ plot4 = int(max_onus/onu_step) * [0]
 plot4e= int(max_onus/onu_step) * [0]
 plot5 = int(max_onus/onu_step) * [0]
 
-seeds = [2, 3, 5, 7, 13, 17, 19, 23, 29, 31, 61, 67, 71, 73, 79, 83, 89, 97, 101, 107, 109, 113, 127, 131, 163, 167, 173, 179, 181, 317, 331, 337, 347, 349, 353]
+# seeds = [2, 3, 5, 7, 13, 17, 19, 23, 29, 31, 61, 67, 71, 73, 79, 83, 89, 97, 101, 107, 109, 113, 127, 131, 163, 167, 173, 179, 181, 317, 331, 337, 347, 349, 353]
 #seeds = [1,2,3,4]
-#seeds=[1]
+seeds=[1]
 
 for s in seeds:
     # seed
@@ -78,40 +78,26 @@ for s in seeds:
         # topology
         antenas = f
         onus = f 
-        pns = f+1
+        pns = 1
         splts = 1
-        max_frequencies = 10
+        max_frequencies = 16
 
         matrix = []
         for z in range(f):
-            #print("connecting antenna {} to onu {}".format(z, f+z))
-            matrix.append([z, f+z, 100000])
-            #print("connecting onu {} to pn {}".format(f+z, 2*f+z))
-            matrix.append([f+z, 2*f+z, 10])
-            #print("connecting pn {} to splitter {}".format(2*f+z, 3*f+1))
-            matrix.append([2*f+z, 3*f+1, 100000])
-        #print("connecting splitter {} to cloud {}".format(3*f+1, 3*f))
-        matrix.append([3*f+1, 3*f, 100000])
+            matrix.append([z, f+z, random.randrange(5000,10000)])
+            matrix.append([f+z, 2*f+1, random.randrange(5000,10000)])
+        matrix.append([2*f+1, 2*f, random.randrange(5000,10000)])
 
         nodes = sim.create_topology(env, antenas, onus, pns, splts, matrix, max_frequencies)
-
-        # Shut down all local PNs
-        for node in nodes[2*f:3*f]:
-            node.end()
 
         # start
         print("\tBegin")
         env.run(until=run_time)
         print("\tEnd")
 
-        total_lost = 0
-        total_duplicated = 0
-        total_received = 0
-        for vm in nodes[len(nodes)-2].DU[0].vms:
-            if(type(vm) is sim.DBA_IPACT):
-                total_lost += vm.discarded_requests
-                total_duplicated += vm.duplicated_requests
-                total_received += vm.received_requests
+        total_lost = sim.total_lost
+        total_duplicated = sim.total_duplicated
+        total_received = sim.total_requests
 
         lost_req.append(total_lost)
         duplicated_req.append(total_duplicated)
@@ -151,7 +137,7 @@ for s in seeds:
         total = total / lines
         mean_waited_array.append(total)
 
-        mean_erlang, std_erlang = compute_mean_erlang(packets, total_time=run_time, total_channels=max_frequencies, channel_size=sim.DBA_IPACT_default_bandwidth)
+        mean_erlang, std_erlang = compute_mean_erlang(packets, total_time=run_time, total_channels=max_frequencies, channel_size=sim.slot_default_bandwidth)
         mean_erlangs.append(mean_erlang)
         std_erlangs.append(std_erlang)
 
@@ -164,7 +150,7 @@ for s in seeds:
         plot5[i] += power_consumption[i] / len(seeds)
 
 
-results_file = open(os.path.join("results", "cf_twdm1.txt") ,"w")
+results_file = open(os.path.join("results", "cran_eon3.txt") ,"w")
 results_file.write("n_ONUS\tLost_req\tLost_pct\tAvg_wait\terlang\terlang_std\tpower\n")
 for n_onu, lost_req, lost_pct, avg_wait, erlang, erlang_std, power in zip(range(onu_step,max_onus+1, onu_step), plot1, plot2, plot3, plot4, plot4e, plot5):
     results_file.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(n_onu, lost_req, lost_pct, avg_wait, erlang, erlang_std, power))
@@ -174,31 +160,31 @@ results_file.close()
 plt.plot(range(onu_step,max_onus+1, onu_step), plot1, 'g.-')
 plt.ylabel('Number of Requests Lost')
 plt.xlabel("Number of ONUs")
-plt.savefig('plots/cf_twdm1_lost_req.png', bbox_inches='tight')
+plt.savefig('plots/cran_eon3_lost_req.png', bbox_inches='tight')
 plt.clf()
 
 plt.plot(range(onu_step,max_onus+1, onu_step), plot2, 'b.-')
 plt.ylabel('Percentage of Requests Lost')
 plt.xlabel("Number of ONUs")
-plt.savefig('plots/cf_twdm1_lost_pct.png', bbox_inches='tight')
+plt.savefig('plots/cran_eon3_lost_pct.png', bbox_inches='tight')
 plt.clf()
 
 plt.plot(range(onu_step,max_onus+1, onu_step), plot3, 'r.-')
 plt.ylabel('Average waited time (s)')
 plt.xlabel("Number of ONUs")
-plt.savefig('plots/cf_twdm1_avg_wait.png', bbox_inches='tight')
+plt.savefig('plots/cran_eon3_avg_wait.png', bbox_inches='tight')
 plt.clf()
 
 plt.errorbar(range(onu_step,max_onus+1, onu_step), plot4, plot4e, None, 'c.-')
 plt.ylabel('Mean bandwidth usage (erlangs)')
 plt.xlabel("Number of ONUs")
-plt.savefig('plots/cf_twdm1_erlang.png', bbox_inches='tight')
+plt.savefig('plots/cran_eon3_erlang.png', bbox_inches='tight')
 plt.clf()
 
 plt.plot(range(onu_step,max_onus+1, onu_step), plot5, 'b.-')
 plt.ylabel('Total power consumption (W)')
 plt.xlabel("Number of ONUs")
-plt.savefig('plots/cf_twdm1_power.png', bbox_inches='tight')
+plt.savefig('plots/cran_eon3_power.png', bbox_inches='tight')
 plt.clf()
 
 

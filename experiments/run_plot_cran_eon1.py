@@ -3,7 +3,7 @@
 # 5 seconds
 # 4, 8, 12, 16, 20 RRHs
 # Traffic generation: constant 250/s
-# Channels: 16 of size 200
+# Channels: 50 of size 200
 
 import sys, os
 sys.path.append("./../")
@@ -12,7 +12,7 @@ import elastic as sim
 import matplotlib.pyplot as plt
 import numpy as np
 
-sim.DEBUG = True
+sim.DEBUG = False
 
 def compute_mean_erlang(packets, total_time, total_channels, channel_size, delta=0.1):
     #print("got packets:")
@@ -43,7 +43,7 @@ sim.PN_consumption = lambda x: 25
 sim.Ant_consumption = lambda x: 7
 
 max_onus = 20
-onu_step = 20
+onu_step = 4
 
 run_time = 5
 
@@ -79,7 +79,7 @@ for s in seeds:
         onus = f 
         pns = 1
         splts = 1
-        max_frequencies = 16
+        max_frequencies = 50
 
         matrix = []
         for z in range(f):
@@ -131,6 +131,8 @@ for s in seeds:
             lines += 1
         file.close()
 
+        if lines == 0:
+            lines = 1
         total = total / lines
         mean_waited_array.append(total)
 

@@ -83,9 +83,9 @@ for s in seeds:
 
         matrix = []
         for z in range(f):
-            matrix.append([z, f+z, 100000])
-            matrix.append([f+z, 2*f+1, 100000])
-        matrix.append([2*f+1, 2*f, 100000])
+            matrix.append([z, f+z, random.randint(5000,10000)])
+            matrix.append([f+z, 2*f+1, random.randint(5000,10000)])
+        matrix.append([2*f+1, 2*f, random.randint(5000,10000)])
 
         nodes = sim.create_topology(env, antenas, onus, pns, splts, matrix, max_frequencies)
 

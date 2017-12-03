@@ -136,6 +136,8 @@ for s in seeds:
             lines += 1
         file.close()
 
+        if lines == 0:
+            lines = 1
         total = total / lines
         mean_waited_array.append(total)
 
