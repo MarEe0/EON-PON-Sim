@@ -36,7 +36,7 @@ sim.random.seed(13)
 
 # default values
 sim.tg_default_size = lambda x: random.randint(250,2500)
-sim.tg_default_dist = lambda x: random.randrange(0.5,1.5)
+sim.tg_default_dist = lambda x: random.uniform(0.5,1.5)
 sim.DBA_IPACT_default_bandwidth = 5000
 ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 8
 sim.ONU_consumption = lambda x: 15
@@ -57,7 +57,7 @@ plot5 = int(max_onus/onu_step) * [0]
 
 seeds = [2, 3, 5, 7, 13, 17, 19, 23, 29, 31, 61, 67, 71, 73, 79, 83, 89, 97, 101, 107, 109, 113, 127, 131, 163, 167, 173, 179, 181, 317, 331, 337, 347, 349, 353]
 #seeds = [1,2,3,4]
-#seeds=[1]
+#seeds=[1,2]
 
 for s in seeds:
     # seed

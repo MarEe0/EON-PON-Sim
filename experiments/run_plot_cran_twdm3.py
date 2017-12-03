@@ -35,7 +35,7 @@ sim.random.seed(13)
 
 # default values
 sim.tg_default_size = lambda x: random.randint(614,24300)
-sim.tg_default_dist = lambda x: random.randrange(1.0, 5.0)
+sim.tg_default_dist = lambda x: random.uniform(1.0, 5.0)
 sim.DBA_IPACT_default_bandwidth = 10000 #10Gbps
 ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
 sim.ONU_consumption = lambda x: 15
