@@ -1,6 +1,7 @@
 import simpy
 import os
 import random
+import numpy as np
 import time
 from math import ceil
 
@@ -23,7 +24,7 @@ tg_default_dist = lambda x: random.expovariate(10)
 # default DBA bandwidth:
 #DBA_IPACT_default_bandwidth = 1250000 # 1.25 Gb/s, bandwidth for each frequency/vpon
 # default slot bandwidth:
-slot_default_bandwidth = 6250000 # 6.25Gbps
+DBA_IPACT_default_bandwidth = 6250000 # 6.25Gbps
 # default Antenna consumption:
 Ant_consumption = lambda x: 0
 # default ONU consumption:
@@ -66,7 +67,8 @@ output_files = []
 # writer class
 class Writer(object):
     def __init__(self, start="#\n"):
-        filename = os.path.join("output","{}_{:04}_output.dat".format(time.strftime("%d%m%Y_%H%M%S"), random.randint(0,9999)))
+        rng = np.random.RandomState()
+        filename = os.path.join("output","{}_{:04}_output.dat".format(time.strftime("%d%m%Y_%H%M%S"), rng.randint(0,9999)))
         output_files.append(filename)
         self.file = open(filename, 'w')
         dprint("Opening file", filename, "to write.")
@@ -1038,7 +1040,7 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
     # Note: RSA algorithms go here
     def assign_slots(self, bandwidth):
         # Compute how many slots will be needed to fulfill the request
-        slots_needed = ceil(bandwidth/slot_default_bandwidth)
+        slots_needed = ceil(bandwidth/DBA_IPACT_default_bandwidth)
         dprint(str(self),"is attempting to assign",slots_needed,"slots for size",bandwidth)
 
         # Basic RSA: find first sequence of slots available, bottoms-up
@@ -1074,7 +1076,7 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
                 if(assigned_slots is not None):
                     # create, if possible
                     dprint(str(self) + ": Creating DBA at", self.env.now)
-                    target_dba = DBA_IPACT(self.env, self.node, 0, assigned_slots, len(assigned_slots)*slot_default_bandwidth) # DBA_IPACT_default_bandwidth
+                    target_dba = DBA_IPACT(self.env, self.node, 0, assigned_slots, len(assigned_slots)*DBA_IPACT_default_bandwidth) # DBA_IPACT_default_bandwidth
                     
                     # Elastic: occupying LCs and available freqs
                     for assigned_slot in assigned_slots:

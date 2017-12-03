@@ -1,6 +1,7 @@
 import simpy
 import os
 import random
+import numpy as np
 import time
 
 DEBUG = False
@@ -59,7 +60,8 @@ output_files = []
 # writer class
 class Writer(object):
     def __init__(self, start="#\n"):
-        filename = os.path.join("output","{}_{:04}_output.dat".format(time.strftime("%d%m%Y_%H%M%S"), random.randint(0,9999)))
+        rng = np.random.RandomState()
+        filename = os.path.join("output","{}_{:04}_output.dat".format(time.strftime("%d%m%Y_%H%M%S"), rng.randint(0,9999)))
         output_files.append(filename)
         self.file = open(filename, 'w')
         dprint("Opening file", filename, "to write.")
