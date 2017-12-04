@@ -50,6 +50,7 @@ else:
 
 sim.DEBUG = False
 
+max_frequencies = 0
 # Determining parameters for experiment
 if experiment == 1:
     sim.tg_default_size = lambda x: 250
@@ -139,6 +140,7 @@ seeds = [2, 3, 5, 7, 13, 17, 19, 23, 29, 31, 61, 67, 71, 73, 79, 83, 89, 97, 101
 #seeds=[1]
 
 def run_for_seed(s):
+    global max_frequencies
     # seed
     sim.random.seed(s)
     lost_req = []
@@ -172,7 +174,6 @@ def run_for_seed(s):
             onus = f 
             pns = 1
             splts = 1
-            max_frequencies = 50
 
             matrix = []
             for z in range(f):
