@@ -33,6 +33,7 @@ if len(sys.argv) < 4:
     print("\t<topology>: 'cf' or 'cran'")
     print("\t<support>: 'twdm' or 'eon'")
     print("\t<experiment>: 1, 2 or 3")
+    sys.exit(-1)
 
 topology = sys.argv[1]
 support = sys.argv[2]
@@ -44,7 +45,8 @@ print("Running experiment {} for {}-{}".format(experiment, topology, support))
 if support == "eon":
     import elastic as sim
 elif support == "twdm":
-    import sim
+#    import sim
+    import elastic as sim
 else:
     print("Invalid support: {}".format(support))
 
@@ -53,14 +55,14 @@ sim.DEBUG = False
 max_frequencies = 0
 # Determining parameters for experiment
 if experiment == 1:
-    sim.tg_default_size = lambda x: 250
+    sim.tg_default_size = lambda x: 500
     sim.tg_default_dist = lambda x: 1
     if support == "eon":
-        sim.DBA_IPACT_default_bandwidth = 200
-        max_frequencies = 50
+        sim.DBA_IPACT_default_bandwidth = 300
+        max_frequencies = 16
     elif support == "twdm":
-        sim.DBA_IPACT_default_bandwidth = 5000
-        max_frequencies = 10
+        sim.DBA_IPACT_default_bandwidth = 800
+        max_frequencies = 6
     ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 8
     sim.ONU_consumption = lambda x: 15
     sim.PN_consumption = lambda x: 25
@@ -72,14 +74,14 @@ if experiment == 1:
     run_time = 5
 
 elif experiment == 2:
-    sim.tg_default_size = lambda x: random.randint(250,2500)
+    sim.tg_default_size = lambda x: random.randint(250,750)
     sim.tg_default_dist = lambda x: random.uniform(0.5,1.5)
     if support == "eon":
-        sim.DBA_IPACT_default_bandwidth = 200
-        max_frequencies = 50
+        sim.DBA_IPACT_default_bandwidth = 300
+        max_frequencies = 13
     elif support == "twdm":
-        sim.DBA_IPACT_default_bandwidth = 5000
-        max_frequencies = 10
+        sim.DBA_IPACT_default_bandwidth = 800
+        max_frequencies = 5
     ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 8
     sim.ONU_consumption = lambda x: 15
     sim.PN_consumption = lambda x: 25
@@ -135,7 +137,10 @@ plot4 = int(max_onus/onu_step) * [0]
 plot4e= int(max_onus/onu_step) * [0]
 plot5 = int(max_onus/onu_step) * [0]
 
-seeds = [2, 3, 5, 7, 13, 17, 19, 23, 29, 31, 61, 67, 71, 73, 79, 83, 89, 97, 101, 107, 109, 113, 127, 131, 163, 167, 173, 179, 181, 317, 331, 337, 347, 349, 353]
+if experiment == 1:
+    seeds = [2]
+else:
+    seeds = [2, 3, 5, 7, 13, 17, 19, 23, 29, 31, 61, 67, 71, 73, 79, 83, 89, 97, 101, 107, 109, 113, 127, 131, 163, 167, 173, 179, 181, 317, 331, 337, 347, 349, 353]
 #seeds = [1,2,3,4]
 #seeds=[1]
 
@@ -199,16 +204,19 @@ def run_for_seed(s):
         total_duplicated = 0
         total_received = 0
         # collecting results
-        if support == "eon":
-            total_lost = sim.total_lost
-            total_duplicated = sim.total_duplicated
-            total_received = sim.total_requests
-        elif support == "twdm":
-            for vm in nodes[len(nodes)-2].DU[0].vms:
-                if(type(vm) is sim.DBA_IPACT):
-                    total_lost += vm.discarded_requests
-                    total_duplicated += vm.duplicated_requests
-                    total_received += vm.received_requests
+        total_lost = sim.total_lost
+        total_duplicated = sim.total_duplicated
+        total_received = sim.total_requests
+        # if support == "eon":
+        #     total_lost = sim.total_lost
+        #     total_duplicated = sim.total_duplicated
+        #     total_received = sim.total_requests
+        # elif support == "twdm":
+        #     for vm in nodes[len(nodes)-2].DU[0].vms:
+        #         if(type(vm) is sim.DBA_IPACT):
+        #             total_lost += vm.discarded_requests
+        #             total_duplicated += vm.duplicated_requests
+        #             total_received += vm.received_requests
 
 
         lost_req.append(total_lost)
@@ -287,30 +295,35 @@ results_file.close()
 plt.plot(range(onu_step,max_onus+1, onu_step), plot1, 'g.-')
 plt.ylabel('Number of Requests Lost')
 plt.xlabel("Number of ONUs")
+plt.grid()
 plt.savefig('plots/{}_{}{}_lost_req.png'.format(topology, support, experiment), bbox_inches='tight')
 plt.clf()
 
 plt.plot(range(onu_step,max_onus+1, onu_step), plot2, 'b.-')
 plt.ylabel('Percentage of Requests Lost')
 plt.xlabel("Number of ONUs")
+plt.grid()
 plt.savefig('plots/{}_{}{}_lost_pct.png'.format(topology, support, experiment), bbox_inches='tight')
 plt.clf()
 
 plt.plot(range(onu_step,max_onus+1, onu_step), plot3, 'r.-')
 plt.ylabel('Average waited time (s)')
 plt.xlabel("Number of ONUs")
+plt.grid()
 plt.savefig('plots/{}_{}{}_avg_wait.png'.format(topology, support, experiment), bbox_inches='tight')
 plt.clf()
 
 plt.errorbar(range(onu_step,max_onus+1, onu_step), plot4, plot4e, None, 'c.-')
 plt.ylabel('Mean bandwidth usage (erlangs)')
 plt.xlabel("Number of ONUs")
+plt.grid()
 plt.savefig('plots/{}_{}{}_erlang.png'.format(topology, support, experiment), bbox_inches='tight')
 plt.clf()
 
 plt.plot(range(onu_step,max_onus+1, onu_step), plot5, 'b.-')
 plt.ylabel('Total power consumption (W)')
 plt.xlabel("Number of ONUs")
+plt.grid()
 plt.savefig('plots/{}_{}{}_power.png'.format(topology, support, experiment), bbox_inches='tight')
 plt.clf()
 

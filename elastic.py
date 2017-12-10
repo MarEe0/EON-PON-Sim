@@ -1045,6 +1045,9 @@ class DBA_Assigner(Active_Node, Virtual_Machine):
 
         # Basic RSA: find first sequence of slots available, bottoms-up
         for slot, status in enumerate(self.available_freq):
+            # if already at the end, cancel assignment
+            if slot + slots_needed > len(self.available_freq):
+                return None
             if sum(self.available_freq[slot:slot + slots_needed]) == 0:
                 # Found it
                 return list(range(slot, slot + slots_needed))
