@@ -51,7 +51,7 @@ if experiment == 1:
     elif support == "twdm":
         sim.DBA_IPACT_default_bandwidth = 800
         max_frequencies = 6
-    ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 8
+    sim.ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 8
     sim.ONU_consumption = lambda x: 15
     sim.PN_consumption = lambda x: 25
     sim.Ant_consumption = lambda x: 7
@@ -70,7 +70,7 @@ elif experiment == 3:
     elif support == "twdm":
         sim.DBA_IPACT_default_bandwidth = 10000
         max_frequencies = 3
-    ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
+    sim.ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
     sim.ONU_consumption = lambda x: 15
     sim.PN_consumption = lambda x: 25
     sim.Ant_consumption = lambda x: 7
@@ -90,7 +90,7 @@ elif experiment == 5:
     elif support == "twdm":
         sim.DBA_IPACT_default_bandwidth = 10000
         max_frequencies = 5
-    ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
+    sim.ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
     sim.ONU_consumption = lambda x: 15
     sim.PN_consumption = lambda x: 25
     sim.Ant_consumption = lambda x: 7
@@ -110,7 +110,7 @@ elif experiment == 10:
     elif support == "twdm":
         sim.DBA_IPACT_default_bandwidth = 10000
         max_frequencies = 10
-    ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
+    sim.ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
     sim.ONU_consumption = lambda x: 15
     sim.PN_consumption = lambda x: 25
     sim.Ant_consumption = lambda x: 7
@@ -191,9 +191,9 @@ def run_for_seed(s):
 
             matrix = []
             for z in range(f):
-                matrix.append([z, f+z, 100000])
-                matrix.append([f+z, 2*f+1, 100000])
-            matrix.append([2*f+1, 2*f, 100000])
+                matrix.append([z, f+z, random.randrange(500,1000)])
+                matrix.append([f+z, 2*f+1, random.randrange(500,1000)])
+            matrix.append([2*f+1, 2*f, random.randrange(500,1000)])
         else:
             print("Invalid topology: {}".format(topology))
 
@@ -266,7 +266,7 @@ def run_for_seed(s):
         total = total / lines
         mean_waited_array.append(total)
 
-        mean_erlang, std_erlang = compute_mean_erlang(packets, total_time=run_time, total_channels=max_frequencies, channel_size=sim.DBA_IPACT_default_bandwidth)
+        mean_erlang, std_erlang = compute_mean_erlang(packets, total_time=run_time, total_channels=max_frequencies, channel_size=sim.DBA_IPACT_default_bandwidth, delta=0.0001)
         mean_erlangs.append(mean_erlang)
         std_erlangs.append(std_erlang)
 

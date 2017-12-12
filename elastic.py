@@ -937,7 +937,8 @@ class DBA_IPACT(Active_Node, Virtual_Machine):
                     return None
                 # aligned acks
                 time_to = self.node.time_to_onu(0, r.id_sender)
-                time_from = self.node.time_from_onu(r.bandwidth, r.id_sender)
+                time_from = self.node.time_from_onu(0, r.id_sender)
+                time_from += r.bandwidth / (self.bandwidth)
 
                 available_band = self.bandwidth_available()
                 if(available_band > 0):
