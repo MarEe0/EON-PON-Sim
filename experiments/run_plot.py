@@ -1,23 +1,8 @@
-# Experiment 1 parameters:
-# 100000 units of distance between nodes
-# 5 seconds
-# 4, 8, 12, 16, 20 RRHs
-# Traffic generation: constant 250/s
-# Channels: 50 of size 200
+# Experiment 1: basic
 
-# Experiment 2 parameters:
-# 100000 units of distance between nodes
-# 5 seconds
-# 4, 8, 12, 16, 20 RRHs
-# Traffic generation: [250-2500]/ [0.5-1.5] s
-# Channels: 50 of size 200
-
-# Experiment 3 parameters:
-# [5km-10km] distance between nodes
-# 15 seconds
-# 4, 8, 12, 16, 20 RRHs
-# Traffic generation: [614Mb-24.3Gb]/ [1.0-5.0] s
-# Channels: 16 of size 6250
+# Experiment 3: CPRI 3 channels
+# Experiment 5: CPRI 5 channels
+# Experiment 10: CPRI 10 channels
 
 import sys, os
 sys.path.append("./../")
@@ -32,7 +17,7 @@ if len(sys.argv) < 4:
     print("Usage: run_plot <topology> <support> <experiment>")
     print("\t<topology>: 'cf' or 'cran'")
     print("\t<support>: 'twdm' or 'eon'")
-    print("\t<experiment>: 1, 2 or 3")
+    print("\t<experiment>: 1, 3, 5 or 8")
     sys.exit(-1)
 
 topology = sys.argv[1]
@@ -40,6 +25,9 @@ support = sys.argv[2]
 experiment = int(sys.argv[3])
 
 print("Running experiment {} for {}-{}".format(experiment, topology, support))
+
+# Loading CPRI options - we use 1 - 7A
+cpri_options = [614,1228,2457,3072,4915,6144,9830,8110]
 
 # Determining simulator
 if support == "eon":
@@ -73,16 +61,16 @@ if experiment == 1:
 
     run_time = 5
 
-elif experiment == 2:
-    sim.tg_default_size = lambda x: random.randint(250,750)
-    sim.tg_default_dist = lambda x: random.uniform(0.5,1.5)
+elif experiment == 3:
+    sim.tg_default_size = lambda x: random.choice(cpri_options)
+    sim.tg_default_dist = lambda x: random.uniform(1.0, 2.0)
     if support == "eon":
-        sim.DBA_IPACT_default_bandwidth = 300
-        max_frequencies = 13
-    elif support == "twdm":
-        sim.DBA_IPACT_default_bandwidth = 800
+        sim.DBA_IPACT_default_bandwidth = 6250
         max_frequencies = 5
-    ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 8
+    elif support == "twdm":
+        sim.DBA_IPACT_default_bandwidth = 10000
+        max_frequencies = 3
+    ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
     sim.ONU_consumption = lambda x: 15
     sim.PN_consumption = lambda x: 25
     sim.Ant_consumption = lambda x: 7
@@ -90,11 +78,32 @@ elif experiment == 2:
     max_onus = 20
     onu_step = 4
 
-    run_time = 5
+    run_time = 15    
 
-elif experiment == 3:
-    sim.tg_default_size = lambda x: random.randint(614,24300)
-    sim.tg_default_dist = lambda x: random.randrange(1.0, 5.0)
+
+elif experiment == 5:
+    sim.tg_default_size = lambda x: random.choice(cpri_options)
+    sim.tg_default_dist = lambda x: random.uniform(1.0, 2.0)
+    if support == "eon":
+        sim.DBA_IPACT_default_bandwidth = 6250
+        max_frequencies = 8
+    elif support == "twdm":
+        sim.DBA_IPACT_default_bandwidth = 10000
+        max_frequencies = 5
+    ONU_bitRate_up = sim.DBA_IPACT_default_bandwidth * 10
+    sim.ONU_consumption = lambda x: 15
+    sim.PN_consumption = lambda x: 25
+    sim.Ant_consumption = lambda x: 7
+
+    max_onus = 20
+    onu_step = 4
+
+    run_time = 15   
+
+
+elif experiment == 8:
+    sim.tg_default_size = lambda x: random.choice(cpri_options)
+    sim.tg_default_dist = lambda x: random.uniform(1.0, 2.0)
     if support == "eon":
         sim.DBA_IPACT_default_bandwidth = 6250
         max_frequencies = 16
