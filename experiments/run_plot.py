@@ -17,7 +17,7 @@ if len(sys.argv) < 4:
     print("Usage: run_plot <topology> <support> <experiment>")
     print("\t<topology>: 'cf' or 'cran'")
     print("\t<support>: 'twdm' or 'eon'")
-    print("\t<experiment>: 1, 3, 5 or 8")
+    print("\t<experiment>: 1, 3, 5 or 10")
     sys.exit(-1)
 
 topology = sys.argv[1]
@@ -101,7 +101,7 @@ elif experiment == 5:
     run_time = 15   
 
 
-elif experiment == 8:
+elif experiment == 10:
     sim.tg_default_size = lambda x: random.choice(cpri_options)
     sim.tg_default_dist = lambda x: random.uniform(1.0, 2.0)
     if support == "eon":
