@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import itertools
 
 experiments = [3,5,10]
 supports = ["eon", "twdm", "both"]
 results = [("Average wait", 3), ("Mean bandwidth usage", 4), ("Percentage of requests blocked", 2)]
+marker = itertools.cycle(('v', '^', 's', 'o', '*', 'D')) 
 
 # Plotting average wait for TWDM
 for experiment in experiments:
@@ -18,7 +20,7 @@ for experiment in experiments:
         n_onus.append(int(line.split('\t')[0]))
         wait.append(float(line.split('\t')[3]))
 
-    plt.plot(n_onus, wait, label="TWDM-{}".format(experiment))
+    plt.plot(n_onus, wait, marker=next(marker), label="TWDM-{}".format(experiment))
 
 plt.yscale('log')
 plt.grid(True, "major")
@@ -26,6 +28,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Average wait for TWDM")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Average wait (s)")
 plt.savefig("Average wait for TWDM.png")
 plt.clf()
@@ -43,7 +46,7 @@ for experiment in experiments:
         n_onus.append(int(line.split('\t')[0]))
         wait.append(float(line.split('\t')[3]))
 
-    plt.plot(n_onus, wait, label="EON-{}".format(experiment))
+    plt.plot(n_onus, wait, marker=next(marker), label="EON-{}".format(experiment))
 
 plt.yscale('log')
 plt.grid(True, "major")
@@ -51,6 +54,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Average wait for EON")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Average wait (s)")
 plt.savefig("Average wait for EON.png")
 plt.clf()
@@ -69,7 +73,7 @@ for support in ["eon", "twdm"]:
             n_onus.append(int(line.split('\t')[0]))
             wait.append(float(line.split('\t')[3]))
 
-        plt.plot(n_onus, wait, label="{}-{}".format(support.upper(), experiment))
+        plt.plot(n_onus, wait, marker=next(marker), label="{}-{}".format(support.upper(), experiment))
 
 plt.yscale('log')
 plt.grid(True, "major")
@@ -77,6 +81,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Average wait")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Average wait (s)")
 plt.savefig("Average wait.png")
 plt.clf()
@@ -95,7 +100,7 @@ for experiment in experiments:
         n_onus.append(int(line.split('\t')[0]))
         wait.append(float(line.split('\t')[4]))
 
-    plt.plot(n_onus, wait, label="TWDM-{}".format(experiment))
+    plt.plot(n_onus, wait, marker=next(marker), label="TWDM-{}".format(experiment))
 
 #plt.yscale('log')
 plt.grid(True, "major")
@@ -103,6 +108,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Mean bandwidth usage for TWDM")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Mean bandwidth usage (erlang)")
 plt.savefig("Mean bandwidth usage for TWDM.png")
 plt.clf()
@@ -120,7 +126,7 @@ for experiment in experiments:
         n_onus.append(int(line.split('\t')[0]))
         wait.append(float(line.split('\t')[4]))
 
-    plt.plot(n_onus, wait, label="EON-{}".format(experiment))
+    plt.plot(n_onus, wait, marker=next(marker), label="EON-{}".format(experiment))
 
 #plt.yscale('log')
 plt.grid(True, "major")
@@ -128,6 +134,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Mean bandwidth usage for EON")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Mean bandwidth usage (erlang)")
 plt.savefig("Mean bandwidth usage for EON.png")
 plt.clf()
@@ -146,7 +153,7 @@ for support in ["eon", "twdm"]:
             n_onus.append(int(line.split('\t')[0]))
             wait.append(float(line.split('\t')[4]))
 
-        plt.plot(n_onus, wait, label="{}-{}".format(support.upper(), experiment))
+        plt.plot(n_onus, wait, marker=next(marker), label="{}-{}".format(support.upper(), experiment))
 
 #plt.yscale('log')
 plt.grid(True, "major")
@@ -154,6 +161,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Mean bandwidth usage")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Mean bandwidth usage (erlang)")
 plt.savefig("Mean bandwidth usage.png")
 plt.clf()
@@ -173,7 +181,7 @@ for experiment in experiments:
         n_onus.append(int(line.split('\t')[0]))
         wait.append(float(line.split('\t')[2]))
 
-    plt.plot(n_onus, wait, label="TWDM-{}".format(experiment))
+    plt.plot(n_onus, wait, marker=next(marker), label="TWDM-{}".format(experiment))
 
 #plt.yscale('log')
 plt.grid(True, "major")
@@ -181,6 +189,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Percentage of Lost Packets for TWDM")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Lost packets (%)")
 plt.savefig("Percentage of Lost Packets for TWDM.png")
 plt.clf()
@@ -198,7 +207,7 @@ for experiment in experiments:
         n_onus.append(int(line.split('\t')[0]))
         wait.append(float(line.split('\t')[2]))
 
-    plt.plot(n_onus, wait, label="EON-{}".format(experiment))
+    plt.plot(n_onus, wait, marker=next(marker), label="EON-{}".format(experiment))
 
 #plt.yscale('log')
 plt.grid(True, "major")
@@ -206,6 +215,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Percentage of Lost Packets for EON")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Lost packets (%)")
 plt.savefig("Percentage of Lost Packets for EON.png")
 plt.clf()
@@ -224,7 +234,7 @@ for support in ["eon", "twdm"]:
             n_onus.append(int(line.split('\t')[0]))
             wait.append(float(line.split('\t')[2]))
 
-        plt.plot(n_onus, wait, label="{}-{}".format(support.upper(), experiment))
+        plt.plot(n_onus, wait, marker=next(marker), label="{}-{}".format(support.upper(), experiment))
 
 #plt.yscale('log')
 plt.grid(True, "major")
@@ -232,6 +242,7 @@ plt.grid(True, "minor", linestyle='dotted')
 plt.title("Percentage of Lost Packets")
 plt.legend()
 plt.xlabel("Number of ONUs")
+plt.xticks(n_onus)
 plt.ylabel("Lost packets (%)")
 plt.savefig("Percentage of Lost Packets.png")
 plt.clf()

@@ -140,11 +140,15 @@ def compute_mean_erlang(packets, total_time, total_channels, channel_size, delta
     return erlangs.mean(), erlangs.std()
 
 plot1 = int(max_onus/onu_step) * [0]
+plot1e = int(max_onus/onu_step) * [0]
 plot2 = int(max_onus/onu_step) * [0]
+plot2e = int(max_onus/onu_step) * [0]
 plot3 = int(max_onus/onu_step) * [0]
+plot3e = int(max_onus/onu_step) * [0]
 plot4 = int(max_onus/onu_step) * [0]
-plot4e= int(max_onus/onu_step) * [0]
+plot4e = int(max_onus/onu_step) * [0]
 plot5 = int(max_onus/onu_step) * [0]
+plot5e = int(max_onus/onu_step) * [0]
 
 if experiment == 1:
     seeds = [2]
@@ -284,7 +288,7 @@ from multiprocessing import Pool
 with Pool(processes = 16) as pool:
     results = pool.map(run_for_seed, seeds)
 
-for seed_result in results:
+for i, seed_result in enumerate(results):
     lost_req, count_req, mean_waited_array, mean_erlangs, std_erlangs, power_consumption = seed_result
     for i in range(len(lost_req)):
         plot1[i] += lost_req[i] / len(seeds)
@@ -294,6 +298,13 @@ for seed_result in results:
         plot4e[i]+= std_erlangs[i] / len(seeds)
         plot5[i] += power_consumption[i] / len(seeds)
 
+    seed_results_file = open(os.path.join("results", "{}_{}{}_detailed_seed_{}.txt".format(topology, support, experiment, seeds[i])) ,"w")
+    seed_results_file.write("n_ONUS\tLost_req\tLost_pct\tAvg_wait\terlang\terlang_std\tpower\n")
+
+    for i in range(len(lost_req)):
+        seed_results_file.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format((i+1)*onu_step, lost_req[i], (lost_req[i]/(count_req[i] if count_req[i] != 0 else 1)), mean_waited_array[i], mean_erlangs[i], std_erlangs[i], power_consumption[i]))
+    seed_results_file.close()
+
 results_file = open(os.path.join("results", "{}_{}{}.txt".format(topology, support, experiment)) ,"w")
 results_file.write("n_ONUS\tLost_req\tLost_pct\tAvg_wait\terlang\terlang_std\tpower\n")
 for n_onu, lost_req, lost_pct, avg_wait, erlang, erlang_std, power in zip(range(onu_step,max_onus+1, onu_step), plot1, plot2, plot3, plot4, plot4e, plot5):
@@ -301,40 +312,40 @@ for n_onu, lost_req, lost_pct, avg_wait, erlang, erlang_std, power in zip(range(
 
 results_file.close()
 
-plt.plot(range(onu_step,max_onus+1, onu_step), plot1, 'g.-')
-plt.ylabel('Number of Requests Lost')
-plt.xlabel("Number of ONUs")
-plt.grid()
-plt.savefig('plots/{}_{}{}_lost_req.png'.format(topology, support, experiment), bbox_inches='tight')
-plt.clf()
+# plt.plot(range(onu_step,max_onus+1, onu_step), plot1, 'g.-')
+# plt.ylabel('Number of Requests Lost')
+# plt.xlabel("Number of ONUs")
+# plt.grid()
+# plt.savefig('plots/{}_{}{}_lost_req.png'.format(topology, support, experiment), bbox_inches='tight')
+# plt.clf()
 
-plt.plot(range(onu_step,max_onus+1, onu_step), plot2, 'b.-')
-plt.ylabel('Percentage of Requests Lost')
-plt.xlabel("Number of ONUs")
-plt.grid()
-plt.savefig('plots/{}_{}{}_lost_pct.png'.format(topology, support, experiment), bbox_inches='tight')
-plt.clf()
+# plt.plot(range(onu_step,max_onus+1, onu_step), plot2, 'b.-')
+# plt.ylabel('Percentage of Requests Lost')
+# plt.xlabel("Number of ONUs")
+# plt.grid()
+# plt.savefig('plots/{}_{}{}_lost_pct.png'.format(topology, support, experiment), bbox_inches='tight')
+# plt.clf()
 
-plt.plot(range(onu_step,max_onus+1, onu_step), plot3, 'r.-')
-plt.ylabel('Average waited time (s)')
-plt.xlabel("Number of ONUs")
-plt.grid()
-plt.savefig('plots/{}_{}{}_avg_wait.png'.format(topology, support, experiment), bbox_inches='tight')
-plt.clf()
+# plt.plot(range(onu_step,max_onus+1, onu_step), plot3, 'r.-')
+# plt.ylabel('Average waited time (s)')
+# plt.xlabel("Number of ONUs")
+# plt.grid()
+# plt.savefig('plots/{}_{}{}_avg_wait.png'.format(topology, support, experiment), bbox_inches='tight')
+# plt.clf()
 
-plt.errorbar(range(onu_step,max_onus+1, onu_step), plot4, plot4e, None, 'c.-')
-plt.ylabel('Mean bandwidth usage (erlangs)')
-plt.xlabel("Number of ONUs")
-plt.grid()
-plt.savefig('plots/{}_{}{}_erlang.png'.format(topology, support, experiment), bbox_inches='tight')
-plt.clf()
+# plt.errorbar(range(onu_step,max_onus+1, onu_step), plot4, plot4e, None, 'c.-')
+# plt.ylabel('Mean bandwidth usage (erlangs)')
+# plt.xlabel("Number of ONUs")
+# plt.grid()
+# plt.savefig('plots/{}_{}{}_erlang.png'.format(topology, support, experiment), bbox_inches='tight')
+# plt.clf()
 
-plt.plot(range(onu_step,max_onus+1, onu_step), plot5, 'b.-')
-plt.ylabel('Total power consumption (W)')
-plt.xlabel("Number of ONUs")
-plt.grid()
-plt.savefig('plots/{}_{}{}_power.png'.format(topology, support, experiment), bbox_inches='tight')
-plt.clf()
+# plt.plot(range(onu_step,max_onus+1, onu_step), plot5, 'b.-')
+# plt.ylabel('Total power consumption (W)')
+# plt.xlabel("Number of ONUs")
+# plt.grid()
+# plt.savefig('plots/{}_{}{}_power.png'.format(topology, support, experiment), bbox_inches='tight')
+# plt.clf()
 
 
 print("Finished")
