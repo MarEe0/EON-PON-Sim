@@ -95,8 +95,8 @@ elif experiment == 5:
     sim.PN_consumption = lambda x: 25
     sim.Ant_consumption = lambda x: 7
 
-    max_onus = 8
-    onu_step = 8
+    max_onus = 20
+    onu_step = 4
 
     run_time = 15   
 
@@ -154,7 +154,7 @@ if experiment == 1:
     seeds = [2]
 else:
     seeds = [2, 3, 5, 7, 13, 17, 19, 23, 29, 31, 61, 67, 71, 73, 79, 83, 89, 97, 101, 107, 109, 113, 127, 131, 163, 167, 173, 179, 181, 317, 331, 337, 347, 349, 353]
-seeds = [2,4]
+#seeds = [2,3,5,7]
 #seeds=[1]
 
 def run_for_seed(s):
